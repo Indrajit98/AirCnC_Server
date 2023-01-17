@@ -46,6 +46,18 @@ async function run() {
       res.send({ result, token})
     })
 
+    // Get a single user by email 
+    app.get('/user/:email', async (req,res) => {
+      const email = req.params.email
+      const query = {email: email}
+      const user = await usersCollection.findOne(query)
+      console.log(user);
+      res.send(user)
+
+    })
+
+
+
     // Save a booking 
     app.post ('/bookings', async (req,res) => {
       const bookingData = req.body
@@ -56,7 +68,6 @@ async function run() {
     })
 
     // get a booking
-
     app.get('/bookings', async (req,res) => {
       let query = {}
       const email = req.query.email;
