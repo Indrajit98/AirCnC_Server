@@ -56,6 +56,23 @@ async function run() {
 
     })
 
+    // Get all user 
+    app.get('/users/', async (req,res) => {
+      const user = await usersCollection.find().toArray()
+      console.log(user);
+      res.send(user)
+
+    })
+    // Get all home 
+    app.get('/all-homes/',async(req,res) => {
+      const home = await homesCollection.find().toArray()
+      console.log(home);
+      res.send(home)
+    })
+
+
+
+
 
 
     // Save a booking 
@@ -80,6 +97,15 @@ async function run() {
       const booking = await bookingsCollection.find(query).toArray()
       console.log(booking);
       res.send(booking);
+    })
+
+    //add a home
+    app.post ('/homes', async (req,res) => {
+      const homeData = req.body
+      const result = await homesCollection.insertOne(homeData)
+      console.log(result);
+      res.send(result)
+
     })
 
 
