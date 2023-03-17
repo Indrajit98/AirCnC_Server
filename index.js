@@ -69,7 +69,14 @@ async function run() {
       console.log(home);
       res.send(home)
     })
+    // get single home 
+    app.get('/home/:id', async (req,res) => {
+      const id = req.params.id;
+      const query = {_id: ObjectId(id)}
+      const home = await homesCollection.findOne(query)
+      res.send(home)
 
+    })
 
 
 
@@ -99,7 +106,7 @@ async function run() {
       res.send(booking);
     })
 
-    //add a home
+    //post a home
     app.post ('/homes', async (req,res) => {
       const homeData = req.body
       const result = await homesCollection.insertOne(homeData)
