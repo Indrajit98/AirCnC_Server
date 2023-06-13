@@ -3,6 +3,7 @@ const cors = require('cors')
 const jwt = require('jsonwebtoken')
 // const { MongoClient, ServerApiVersion } = require('mongodb');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
+const nodemailer = require("nodemailer");
 require('dotenv').config()
 
 const app = express()
@@ -13,13 +14,43 @@ const port = process.env.PORT || 5000
 app.use(cors())
 app.use(express.json())
 
-// Database Connection
+// Database Connection 
 const uri = process.env.DB_URI
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 })
+
+// send email 
+const sendMail = (emailData,email ) =>{
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL,
+      pass: process.env.PASSWORD,
+    }
+  })
+
+  const mailOptions = { 
+    from: process.env.EMAIL,
+    to: email,
+    subject: emailData?.subject,
+    html: `<p>${emailData?.message}</p>`
+  }
+
+  transporter.sendMail(mailOptions, function(error, info){
+    if (error) {
+   console.log(error);
+    } else {
+      console.log('Email sent: ' + info.response);
+      // do something useful
+    }
+  });
+
+
+}
+
 
 async function run() {
   try {
@@ -28,10 +59,11 @@ async function run() {
     const bookingsCollection = client.db('airCnC').collection('bookings')
 
 
+    
     // Save user email & generate JWT 
     app.put('/user/:email', async (req,res) => {
       const email = req.params.email
-      const user = req.body
+      const user = req.body 
       const filter = {email: email}
       const options = {upsert: true}
       const updateDoc = {
@@ -75,18 +107,19 @@ async function run() {
       const query = {_id: ObjectId(id)}
       const home = await homesCollection.findOne(query)
       res.send(home)
+      
 
     })
-
-
-
-
 
     // Save a booking 
     app.post ('/bookings', async (req,res) => {
       const bookingData = req.body
       const result = await bookingsCollection.insertOne(bookingData)
-      console.log(result);
+      // console.log(result);
+      sendMail({
+        subject:'Booking Successful!',
+        message:`Booking Id: ${result?.insertedId} `},  
+        bookingData?.guestEmail)
       res.send(result)
 
     })
@@ -104,6 +137,14 @@ async function run() {
       const booking = await bookingsCollection.find(query).toArray()
       console.log(booking);
       res.send(booking);
+    })
+
+     // Get a single booking
+     app.get('/booking/:id', async (req, res) => {
+      const id = req.params.id
+      const query = { _id: ObjectId(id) }
+      const booking = await bookingsCollection.findOne(query)
+      res.send(booking)
     })
 
     //post a home
