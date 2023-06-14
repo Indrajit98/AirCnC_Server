@@ -138,7 +138,7 @@ async function run() {
       console.log(booking);
       res.send(booking);
     })
-
+    
      // Get a single booking
      app.get('/booking/:id', async (req, res) => {
       const id = req.params.id
@@ -146,6 +146,16 @@ async function run() {
       const booking = await bookingsCollection.findOne(query)
       res.send(booking)
     })
+
+    // Cancle a booking 
+    app.delete('/booking/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id)}
+      const result = bookingsCollection.deleteOne(query)
+      res.send(result)
+
+    })
+
 
     //post a home
     app.post ('/homes', async (req,res) => {
@@ -155,8 +165,6 @@ async function run() {
       res.send(result)
 
     })
-
-
 
     console.log('Database Connected...')
   } finally {
