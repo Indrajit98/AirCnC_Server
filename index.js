@@ -4,7 +4,9 @@ const jwt = require('jsonwebtoken')
 // const { MongoClient, ServerApiVersion } = require('mongodb');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 const nodemailer = require("nodemailer");
-require('dotenv').config()
+require('dotenv').config();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+
 
 const app = express()
 const port = process.env.PORT || 5000
@@ -124,6 +126,27 @@ async function run() {
 
     })
 
+    // create payment intent 
+    app.post('/create-payment-intent', async ( req,res) => {
+      const price = req.body.price;
+      console.log(price);
+      const amount = parseFloat(price * 100);
+      try{
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amount,
+          currency: 'usd',
+          payment_method_types: ['card'],
+        })
+        res.send({ clientSecret: paymentIntent.client_secret })
+
+      }catch (err){
+        err=>console.log(err);
+      }
+
+    } )
+
+
+
     // get a booking
     app.get('/bookings', async (req,res) => {
       let query = {}
@@ -151,7 +174,7 @@ async function run() {
     app.delete('/booking/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id)}
-      const result = bookingsCollection.deleteOne(query)
+      const result = await bookingsCollection.deleteOne(query)
       res.send(result)
 
     })
