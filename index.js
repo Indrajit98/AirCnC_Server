@@ -103,24 +103,65 @@ async function run() {
       console.log(home);
       res.send(home)
     })
+
+    // Get All Homes for host
+    app.get('/homes/:email', async (req, res) => {
+      const email = req.params.email
+      // const decodedEmail = req.decoded.email
+
+      /* if (email !== decodedEmail) {
+        return res.status(403).send({ message: 'forbidden access' })
+      } */
+      const query = {
+        'host.email': email,
+      }
+      const cursor = homesCollection.find(query)
+      const homes = await cursor.toArray()
+      res.send(homes)
+    })
+
+      // Update A Home
+      app.put('/homes', async (req, res) => {
+        const home = req.body
+        console.log(home)
+  
+        const filter = {}
+        const options = { upsert: true }
+        const updateDoc = {
+          $set: home,
+        }
+        const result = await homesCollection.updateOne(filter, updateDoc, options)
+        res.send(result)
+      })
+
+      // Delete a home
+      app.delete('/home/:id', async (req, res) => {
+        const id = req.params.id
+        const query = { _id: ObjectId(id) }
+        const result = await homesCollection.deleteOne(query)
+        res.send(result)
+      })
+
+
     // get single home 
     app.get('/home/:id', async (req,res) => {
       const id = req.params.id;
       const query = {_id: ObjectId(id)}
       const home = await homesCollection.findOne(query)
       res.send(home)
-      
-
     })
+
 
     // Save a booking 
     app.post ('/bookings', async (req,res) => {
       const bookingData = req.body
       const result = await bookingsCollection.insertOne(bookingData)
       // console.log(result);
-      sendMail({
+      sendMail(
+        {
         subject:'Booking Successful!',
-        message:`Booking Id: ${result?.insertedId} `},  
+        message:`Booking Id: ${result?.insertedId},TransactionId: ${bookingData.transactionId}`
+        },  
         bookingData?.guestEmail)
       res.send(result)
 
