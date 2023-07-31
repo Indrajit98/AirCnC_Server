@@ -23,6 +23,25 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 })
+// Decode JWT
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization
+
+  if (!authHeader) {
+    return res.status(401).send({ message: 'unauthorized access' })
+  }
+  const token = authHeader.split(' ')[1]
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: 'Forbidden access' })
+    }
+    console.log(decoded)
+    req.decoded = decoded
+    next()
+  })
+}
+
 
 // send email 
 const sendMail = (emailData,email ) =>{
@@ -107,9 +126,9 @@ async function run() {
     // Get All Homes for host
     app.get('/homes/:email', async (req, res) => {
       const email = req.params.email
-      // const decodedEmail = req.decoded.email
+     /*  const decodedEmail = req.decoded.email
 
-      /* if (email !== decodedEmail) {
+      if (email !== decodedEmail) {
         return res.status(403).send({ message: 'forbidden access' })
       } */
       const query = {
@@ -135,12 +154,24 @@ async function run() {
       })
 
       // Delete a home
-      app.delete('/home/:id', async (req, res) => {
+      app.delete('/home/:id',verifyJWT, async (req, res) => {
         const id = req.params.id
         const query = { _id: ObjectId(id) }
         const result = await homesCollection.deleteOne(query)
         res.send(result)
       })
+
+        // Get search result
+    app.get('/search-result', async (req, res) => {
+      const query = {}
+      const location = req.query.location
+      if (location) query.location = location
+
+      console.log(query)
+      const cursor = homesCollection.find(query)
+      const homes = await cursor.toArray()
+      res.send(homes)
+    })
 
 
     // get single home 
@@ -212,7 +243,7 @@ async function run() {
     })
 
     // Cancle a booking 
-    app.delete('/booking/:id', async (req, res) => {
+    app.delete('/booking/:id', verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id)}
       const result = await bookingsCollection.deleteOne(query)
@@ -222,7 +253,7 @@ async function run() {
 
 
     //post a home
-    app.post ('/homes', async (req,res) => {
+    app.post ('/homes', verifyJWT, async (req,res) => {
       const homeData = req.body
       const result = await homesCollection.insertOne(homeData)
       console.log(result);
